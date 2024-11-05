@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carter's Campaign Dashboard - Styled Return Cards</title>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body.light-mode {
+            background: linear-gradient(to bottom right, #f4f4f9, #e0e7ff);
+            color: #333;
+        }
+        body.dark-mode {
+            background: linear-gradient(to bottom right, #1e1e2f, #0d0d19);
+            color: #fff;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Container Grid */
+        .container {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 300px 1fr;
+            grid-template-areas:
+                "header header"
+                "campaign main"
+                "campaign tracking";
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* Header Section */
+        .header {
+            grid-area: header;
+            text-align: center;
+            padding: 20px;
+            background: #fafbff;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            color: #4a4a4a;
+        }
+        .dark-mode .header {
+            background: #2a2a40;
+        }
+        .dark-mode .header h1 {
+            color: #fff;
+        }
+
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-bottom: 10px;
+            margin-top: 10px;
+        }
+        .tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: background 0.3s;
+            background: #e0e7ff;
+            color: #333;
+        }
+        .tab:hover {
+            background: #cdd6ff;
+        }
+        .tab.active {
+            background: #007acc;
+            color: white;
+        }
+        .dark-mode .tab {
+            background: #3a3a5e;
+            color: #fff;
+        }
+        .dark-mode .tab:hover {
+            background: #4a4a7a;
+        }
+        .dark-mode .tab.active {
+            background: #005b99;
+        }
+
+        /* Campaign Section */
+        .campaign {
+            grid-area: campaign;
+            overflow-y: auto;
+            background: #f0f0f5;
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+        }
+        .campaign h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #4a4a4a;
+        }
+        .campaign-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .campaign-item {
+            padding: 15px;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+        .campaign-item:hover {
+            transform: scale(1.02);
+            background: #e0e7ff;
+        }
+        .campaign-item h3 {
+            font-size: 1.1em;
+            color: inherit;
+        }
+        .campaign-item .summary-stats {
+            color: #666;
+            font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
+            padding-top: 5px;
+        }
+        .campaign-item .stat {
+            margin-bottom: 3px;
+        }
+        .dark-mode .campaign {
+            background: #2a2a40;
+            border-right: 1px solid #555;
+        }
+        .dark-mode .campaign h2 {
+            color: #fff;
+        }
+        .dark-mode .campaign-item {
+            background: #333;
+            border: 1px solid #555;
+            box-shadow: none;
+            color: #fff;
+        }
+        .dark-mode .campaign-item:hover {
+            background: #3a3a5e;
+        }
+        .dark-mode .campaign-item .summary-stats {
+            color: #ccc;
+        }
+
+        /* Main Section for Buttons */
+        .main {
+            grid-area: main;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f0f0f5;
+        }
+        .dark-mode .main {
+            background: #2a2a40;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .button-item {
+            padding: 15px;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            color: #333;
+        }
+        .button-item:hover {
+            transform: scale(1.02);
+            background: #e0e7ff;
+        }
+        /* Special styling for the "TCX Election Tracker" button */
+        .button-item.tcx {
+            background: #e0e7ff;
+            font-size: 1.2em;
+        }
+        .dark-mode .button-item {
+            background: #333;
+            border: 1px solid #555;
+            box-shadow: none;
+            color: #fff;
+        }
+        .dark-mode .button-item:hover {
+            background: #3a3a5e;
+        }
+        .dark-mode .button-item.tcx {
+            background: #3a3a5e;
+        }
+
+        /* Ballot Return Tracker Section */
+        .tracking {
+            grid-area: tracking;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f0f0f5;
+            border-top: 1px solid #e0e0e0;
+            position: absolute;
+            top: calc(100vh - 15vh);
+            left: 310px;
+            right: 0;
+            height: 15vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .return-card {
+            padding: 10px;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9em;
+            color: #333;
+        }
+        .return-card span.category {
+            font-weight: bold;
+            color: #007acc;
+        }
+        .dark-mode .tracking {
+            background: #2a2a40;
+            border-top: 1px solid #555;
+        }
+        .dark-mode .return-card {
+            background: #333;
+            box-shadow: none;
+            color: #fff;
+        }
+        .dark-mode .return-card span.category {
+            color: #bbb;
+        }
+
+        /* Toggle Icon */
+        .toggle-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #4a4a4a;
+            transition: color 0.3s;
+        }
+        .dark-mode .toggle-icon {
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-areas:
+                    "header"
+                    "campaign"
+                    "main"
+                    "tracking";
+                grid-template-columns: 1fr;
+            }
+            .campaign,
+            .main,
+            .tracking {
+                position: static;
+                height: auto;
+            }
+            .tracking {
+                top: auto;
+                left: auto;
+                right: auto;
+            }
+            .main {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="toggle-icon" onclick="toggleMode()">&#9728;</div>
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>Carter's Campaign Dashboard</h1>
+            <div class="tab-container">
+                <div class="tab active" onclick="showTab('california')">California Elections</div>
+                <div class="tab" onclick="showTab('keyraces')">Key Races</div>
+                <div class="tab" onclick="showTab('presidential')">Presidential Tracker</div>
+            </div>
+        </div>
+
+        <!-- Campaign List Section -->
+        <div class="campaign">
+            <h2>November 2024 Campaigns</h2>
+            <div class="campaign-list">
+                <!-- Campaign Items -->
+                <a href="campaign_details_1.html" class="campaign-item" id="campaign_1">
+                    <h3>Fullerton High SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 55.00%</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_2.html" class="campaign-item" id="campaign_2">
+                    <h3>Santa Fe Springs Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: Two-Thirds</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_3.html" class="campaign-item" id="campaign_3">
+                    <h3>Sutter Creek Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 50% +1</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_4.html" class="campaign-item" id="campaign_4">
+                    <h3>La Mesa Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 50% +1</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_5.html" class="campaign-item" id="campaign_5">
+                    <h3>Truckee Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 50% +1</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_6.html" class="campaign-item" id="campaign_6">
+                    <h3>Napa Valley SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 55.00%</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_7.html" class="campaign-item" id="campaign_7">
+                    <h3>Napa Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 50% +1</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_8.html" class="campaign-item" id="campaign_8">
+                    <h3>Los Altos SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 55.00%</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_9.html" class="campaign-item" id="campaign_9">
+                    <h3>Travis SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 55.00%</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_10.html" class="campaign-item" id="campaign_10">
+                    <h3>Mountain View Whisman SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: Two-Thirds</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_11.html" class="campaign-item" id="campaign_11">
+                    <h3>Spesier-BOE</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: 50% +1</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_12.html" class="campaign-item" id="campaign_12">
+                    <h3>Encinitas Ci</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: --</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_13.html" class="campaign-item" id="campaign_13">
+                    <h3>East Whittier SD</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: --</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+                <a href="campaign_details_14.html" class="campaign-item" id="campaign_14">
+                    <h3>Devon Conley</h3>
+                    <div class="summary-stats">
+                        <div class="stat">Target: --</div>
+                        <div class="stat">Polling: --%</div>
+                        <div class="stat">Current Results: --%</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Section with Buttons -->
+        <div class="main">
+            <div class="button-container">
+                <a href="tcx_election_tracker.html" class="button-item tcx">TCX Election Tracker</a>
+                <a href="santa_clara_results.html" class="button-item">Santa Clara Election Results</a>
+                <a href="napa_results.html" class="button-item">Napa Election Results</a>
+                <a href="nevada_co_results.html" class="button-item">Nevada Co Election Results</a>
+                <a href="oc_results.html" class="button-item">OC Election Results</a>
+                <a href="la_county_results.html" class="button-item">LA County Election Results</a>
+                <a href="san_diego_results.html" class="button-item">San Diego Election Results</a>
+            </div>
+        </div>
+
+        <!-- Ballot Return Tracker -->
+        <div class="tracking">
+            <div class="return-card">
+                <span class="category">County:</span><span>Napa</span>
+                <span class="category">Races Impacted:</span><span>City Council, School Board</span>
+                <span class="category">Total Reported:</span><span>85%</span>
+                <span class="category">Last Updated:</span><span>8:15 PM</span>
+            </div>
+            <div class="return-card">
+                <span class="category">County:</span><span>Los Angeles</span>
+                <span class="category">Races Impacted:</span><span>Mayor, Local Measures</span>
+                <span class="category">Total Reported:</span><span>60%</span>
+                <span class="category">Last Updated:</span><span>8:20 PM</span>
+            </div>
+            <!-- Add more return cards if needed -->
+        </div>
+    </div>
+
+    <script>
+        function toggleMode() {
+            const body = document.body;
+            const icon = document.querySelector('.toggle-icon');
+            body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+            icon.innerHTML = body.classList.contains('dark-mode') ? '&#9728;' : '&#9790;';
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            // Additional functionality to show/hide content based on the tab can be added here
+        }
+    </script>
+</body>
+</html>
