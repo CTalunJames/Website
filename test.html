@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Campaign Dashboard</title>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+    // Add dynamic form entries for Previous Campaigns
+    function addPreviousCampaign() {
+        const container = document.getElementById('previousCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Campaign Name" class="form-control">
+            <input type="number" placeholder="Year" class="form-control" min="1900" max="2100">
+            <input type="number" placeholder="Total Votes" class="form-control" min="0">
+            <input type="number" placeholder="Votes For" class="form-control" min="0">
+            <input type="number" placeholder="Votes Against" class="form-control" min="0">
+            <input type="number" placeholder="Turnout (%)" class="form-control" min="0" max="100">
+            <select class="form-control">
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+            </select>
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Polling
+    function addPoll() {
+        const container = document.getElementById('pollingData');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="date" class="form-control" placeholder="Date">
+            <input type="number" placeholder="Initial Ballot %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Oppo %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Education %" class="form-control" min="0" max="100">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Canary Campaigns
+    function addCanaryCampaign() {
+        const container = document.getElementById('canaryCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Canary Campaign Name" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Committee Members
+    function addCommitteeMember() {
+        const container = document.getElementById('committeeMembers');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Name" class="form-control">
+            <input type="email" placeholder="Email" class="form-control">
+            <input type="tel" placeholder="Phone" class="form-control">
+            <input type="text" placeholder="Title" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+
+    // Close the popup when 'X' button is clicked
+    function closeSettingsPopupWithoutSaving() {
+        document.getElementById('settingsPopup').style.display = 'none';
+    }
+
+
+    // Function to dynamically update website content based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+function updateContent() {
+    const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+    // Canary Campaigns Section
+    const canaryCampaignsContainer = document.getElementById('canaryCampaignsSection');
+    canaryCampaignsContainer.innerHTML = ''; // Clear previous entries
+    
+    // Iterate over each campaign entry and append it
+    (settings.canaryCampaigns || []).forEach((canary, index) => {
+        const canaryDiv = document.createElement('div');
+        canaryDiv.className = 'card canary-entry';
+        canaryDiv.style.padding = '10px';
+        canaryDiv.innerHTML = `
+            <h3>${canary.name || 'Unnamed Campaign'}</h3>
+            <p><strong>Total Votes:</strong> ${canary.totalVotes || 'N/A'}</p>
+            <p><strong>Turnout:</strong> ${canary.turnout || 'N/A'}%</p>
+        `;
+        canaryCampaignsContainer.appendChild(canaryDiv); // Append entry to container
+    });
+}
+        // Update Previous Campaigns
+        const previousCampaignsContainer = document.getElementById('previousCampaignsCard');
+        previousCampaignsContainer.innerHTML = ''; // Clear existing content
+        (settings.previousCampaigns || []).forEach(campaign => {
+            const campaignDiv = document.createElement('div');
+            campaignDiv.className = 'campaign-entry';
+            campaignDiv.innerHTML = `
+                <h4>${campaign.name} (${campaign.year})</h4>
+                <p>Total Votes: ${campaign.totalVotes}</p>
+                <p>Result: ${campaign.result}</p>
+                <p>Turnout: ${campaign.turnout}%</p>
+            `;
+            previousCampaignsContainer.appendChild(campaignDiv);
+        });
+
+        // Update Committee Members
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing content
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                Email: ${member.email}<br>
+                Phone: ${member.phone}<br>
+                Title: ${member.title}
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+   function saveSettings() {
+    const settings = {
+        campaignName: document.getElementById('campaignName').value,
+        campaignCounty: document.getElementById('campaignCounty').value,
+        logo: document.getElementById('logoPreview').src,
+        previousCampaigns: [],
+        pollingData: [],
+        canaryCampaigns: [],
+        committeeMembers: []
+    };
+
+    // Capture dynamic Previous Campaigns data
+    document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+        settings.previousCampaigns.push({
+            name: entry.children[0].value,
+            year: entry.children[1].value,
+            totalVotes: entry.children[2].value,
+            voteFor: entry.children[3].value,
+            voteAgainst: entry.children[4].value,
+            turnout: entry.children[5].value,
+            result: entry.children[6].value
+        });
+    });
+
+    // Capture dynamic Polling data
+    document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+        settings.pollingData.push({
+            date: entry.children[0].value,
+            initialPercent: entry.children[1].value,
+            oppoPercent: entry.children[2].value,
+            educationPercent: entry.children[3].value
+        });
+    });
+
+    // Capture dynamic Canary Campaigns data
+    document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+        settings.canaryCampaigns.push({
+            name: entry.children[0].value
+        });
+    });
+
+    // Capture dynamic Committee Members data
+    document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+        settings.committeeMembers.push({
+            name: entry.children[0].value,
+            email: entry.children[1].value,
+            phone: entry.children[2].value,
+            title: entry.children[3].value
+        });
+    });
+
+    localStorage.setItem('campaignSettings', JSON.stringify(settings));
+    updateContent();
+    closeSettingsPopup();
+}
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Load content on page load
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures content updates with saved data on page load
+    };
+
+
+    // Function to dynamically update website content within specific cards based on form entries
+    function updateContent() {
+    const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+    // Update basic info (Campaign Name, County, and Logo)
+    document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+    document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+    if (settings.logo) {
+        document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+    }
+
+    // Update Previous Campaigns
+    const previousCampaignsContainer = document.getElementById('previousCampaignsCard');
+    previousCampaignsContainer.innerHTML = ''; // Clear existing content
+    (settings.previousCampaigns || []).forEach(campaign => {
+        const campaignDiv = document.createElement('div');
+        campaignDiv.className = 'campaign-entry';
+        campaignDiv.innerHTML = `
+            <h4>${campaign.name} (${campaign.year})</h4>
+            <p>Total Votes: ${campaign.totalVotes}</p>
+            <p>Result: ${campaign.result}</p>
+            <p>Turnout: ${campaign.turnout}%</p>
+        `;
+        previousCampaignsContainer.appendChild(campaignDiv);
+    });
+
+    // Update Committee Members
+    const committeeMembersContainer = document.getElementById('committeeMembersSection');
+    committeeMembersContainer.innerHTML = ''; // Clear existing content
+    (settings.committeeMembers || []).forEach(member => {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'member-entry';
+        memberDiv.innerHTML = `
+            <strong>${member.name}</strong><br>
+            Email: ${member.email}<br>
+            Phone: ${member.phone}<br>
+            Title: ${member.title}
+        `;
+        committeeMembersContainer.appendChild(memberDiv);
+    });
+}
+        // Update Canary Campaigns in specific card
+        const canaryCampaignsContainer = document.getElementById('canaryCampaignsSection');
+        canaryCampaignsContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.canaryCampaigns || []).forEach(canary => {
+            const canaryDiv = document.createElement('div');
+            canaryDiv.className = 'canary-entry';
+            canaryDiv.style.padding = '5px 0'; // Add padding for separation
+            canaryDiv.innerHTML = `<h3>${canary.name}</h3>`;
+            canaryCampaignsContainer.appendChild(canaryDiv);
+        });
+
+        // Update Committee Members in specific card
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.style.padding = '5px 0'; // Add padding for separation
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                <p>Email: ${member.email}</p>
+                <p>Phone: ${member.phone}</p>
+                <p>Title: ${member.title}</p>
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Save settings function adjusted for dynamic entries to replace placeholders within each card
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Initialize the chart and content on page load to include both data and layout adjustments
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures card placeholders update with saved data on page load
+    };
+
+</script>
+<!-- Chart.js Data Labels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2">
+    // Add dynamic form entries for Previous Campaigns
+    function addPreviousCampaign() {
+        const container = document.getElementById('previousCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Campaign Name" class="form-control">
+            <input type="number" placeholder="Year" class="form-control" min="1900" max="2100">
+            <input type="number" placeholder="Total Votes" class="form-control" min="0">
+            <input type="number" placeholder="Votes For" class="form-control" min="0">
+            <input type="number" placeholder="Votes Against" class="form-control" min="0">
+            <input type="number" placeholder="Turnout (%)" class="form-control" min="0" max="100">
+            <select class="form-control">
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+            </select>
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Polling
+    function addPoll() {
+        const container = document.getElementById('pollingData');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="date" class="form-control" placeholder="Date">
+            <input type="number" placeholder="Initial Ballot %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Oppo %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Education %" class="form-control" min="0" max="100">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Canary Campaigns
+    function addCanaryCampaign() {
+        const container = document.getElementById('canaryCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Canary Campaign Name" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Committee Members
+    function addCommitteeMember() {
+        const container = document.getElementById('committeeMembers');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Name" class="form-control">
+            <input type="email" placeholder="Email" class="form-control">
+            <input type="tel" placeholder="Phone" class="form-control">
+            <input type="text" placeholder="Title" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+
+    // Close the popup when 'X' button is clicked
+    function closeSettingsPopupWithoutSaving() {
+        document.getElementById('settingsPopup').style.display = 'none';
+    }
+
+
+    // Function to dynamically update website content based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+
+
+        // Update Committee Members
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing content
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                Email: ${member.email}<br>
+                Phone: ${member.phone}<br>
+                Title: ${member.title}
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Modify saveSettings to store data from dynamic form entries
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+    // Canary Campaigns Section
+    const canaryCampaignsContainer = document.getElementById('canaryCampaignsSection');
+    canaryCampaignsContainer.innerHTML = ''; // Clear previous entries
+    
+    // Iterate over each campaign entry and append it
+    (settings.canaryCampaigns || []).forEach((canary, index) => {
+        const canaryDiv = document.createElement('div');
+        canaryDiv.className = 'card canary-entry';
+        canaryDiv.style.padding = '10px';
+        canaryDiv.innerHTML = `
+            <h3>${canary.name || 'Unnamed Campaign'}</h3>
+            <p><strong>Total Votes:</strong> ${canary.totalVotes || 'N/A'}</p>
+            <p><strong>Turnout:</strong> ${canary.turnout || 'N/A'}%</p>
+        `;
+        canaryCampaignsContainer.appendChild(canaryDiv); // Append entry to container
+    });
+}
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Load content on page load
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures content updates with saved data on page load
+    };
+
+
+    // Function to dynamically update website content within specific cards based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+        // Update Committee Members in specific card
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.style.padding = '5px 0'; // Add padding for separation
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                <p>Email: ${member.email}</p>
+                <p>Phone: ${member.phone}</p>
+                <p>Title: ${member.title}</p>
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Save settings function adjusted for dynamic entries to replace placeholders within each card
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+// Capture dynamic Polling data
+document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+    settings.pollingData.push({
+        date: entry.children[0].value,
+        initialPercent: entry.children[1].value,
+        oppoPercent: entry.children[2].value,
+        educationPercent: entry.children[3].value
+    });
+});
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+      document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+    settings.canaryCampaigns.push({
+        name: entry.children[0].value,
+        totalVotes: entry.children[1].value, // Add each relevant field
+        votesFor: entry.children[2].value,
+        votesAgainst: entry.children[3].value,
+        turnout: entry.children[4].value
+    });
+});
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Initialize the chart and content on page load to include both data and layout adjustments
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures card placeholders update with saved data on page load
+    };
+
+</script>
+<style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+    color: #e0e0e0;
+        /* Container for the entire page */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .header .back-button {
+            position: absolute;
+            left: 0;
+            top: 0;
+            margin: 20px;
+        }
+        .back-button a {
+            text-decoration: none;
+            color: #003366;
+            font-size: 1em;
+            border: 1px solid #003366;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .back-button a:hover {
+            background-color: #003366;
+            color: #fff;
+        }
+        .logo-placeholder {
+            width: 100px;
+            height: 100px;
+            background-color: #ddd;
+            margin: 0 auto 10px auto;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        .header h2 {
+            margin: 5px 0 0 0;
+            font-size: 1.2em;
+            color: #555;
+        }
+        /* Chart area */
+        .chart-card {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .chart-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Chart options */
+        .chart-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .chart-options label {
+            margin-right: 5px;
+            font-size: 0.9em;
+        }
+        .chart-options select {
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 0.9em;
+        }
+        /* Cards container */
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: flex-start;
+        }
+        /* Card styling */
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+            box-sizing: border-box;
+            flex: 1 1 100%;
+            min-width: 250px;
+        }
+        .card.small-card {
+            flex: 1 1 calc(33.333% - 20px);
+        }
+        .card.medium-card {
+            flex: 1 1 calc(50% - 20px);
+        }
+        .card h2, .card h3, .card h4 {
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        .card p {
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+        <script>
+    function toggleMode() {
+        const body = document.body;
+        const icon = document.querySelector('.toggle-icon');
+        body.classList.toggle('dark-mode');
+        body.classList.toggle('light-mode');
+        icon.innerHTML = body.classList.contains('dark-mode') ? '&#9728;' : '&#9790;';
+    }
+
+    // Add dynamic form entries for Previous Campaigns
+    function addPreviousCampaign() {
+        const container = document.getElementById('previousCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Campaign Name" class="form-control">
+            <input type="number" placeholder="Year" class="form-control" min="1900" max="2100">
+            <input type="number" placeholder="Total Votes" class="form-control" min="0">
+            <input type="number" placeholder="Votes For" class="form-control" min="0">
+            <input type="number" placeholder="Votes Against" class="form-control" min="0">
+            <input type="number" placeholder="Turnout (%)" class="form-control" min="0" max="100">
+            <select class="form-control">
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+            </select>
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Polling
+    function addPoll() {
+        const container = document.getElementById('pollingData');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="date" class="form-control" placeholder="Date">
+            <input type="number" placeholder="Initial Ballot %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Oppo %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Education %" class="form-control" min="0" max="100">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Canary Campaigns
+    function addCanaryCampaign() {
+        const container = document.getElementById('canaryCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Canary Campaign Name" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Committee Members
+    function addCommitteeMember() {
+        const container = document.getElementById('committeeMembers');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Name" class="form-control">
+            <input type="email" placeholder="Email" class="form-control">
+            <input type="tel" placeholder="Phone" class="form-control">
+            <input type="text" placeholder="Title" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+
+    // Close the popup when 'X' button is clicked
+    function closeSettingsPopupWithoutSaving() {
+        document.getElementById('settingsPopup').style.display = 'none';
+    }
+
+
+    // Function to dynamically update website content based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+
+        // Update Committee Members
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing content
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                Email: ${member.email}<br>
+                Phone: ${member.phone}<br>
+                Title: ${member.title}
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Modify saveSettings to store data from dynamic form entries
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Load content on page load
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures content updates with saved data on page load
+    };
+
+
+    // Function to dynamically update website content within specific cards based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+
+        // Update Polling Data in specific card
+const pollingContainer = document.getElementById('polling-last-updated');        pollingContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.pollingData || []).forEach(poll => {
+            const pollDiv = document.createElement('div');
+            pollDiv.className = 'poll-entry';
+            pollDiv.style.padding = '5px 0'; // Add padding for separation
+            pollDiv.innerHTML = `
+                <p><strong>Date:</strong> ${poll.date}</p>
+                <p><strong>Initial Ballot:</strong> ${poll.initialPercent}%</p>
+                <p><strong>After Oppo:</strong> ${poll.oppoPercent}%</p>
+                <p><strong>After Education:</strong> ${poll.educationPercent}%</p>
+            `;
+            pollingContainer.appendChild(pollDiv);
+        });
+
+        // Update Committee Members in specific card
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.style.padding = '5px 0'; // Add padding for separation
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                <p>Email: ${member.email}</p>
+                <p>Phone: ${member.phone}</p>
+                <p>Title: ${member.title}</p>
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Save settings function adjusted for dynamic entries to replace placeholders within each card
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Initialize the chart and content on page load to include both data and layout adjustments
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures card placeholders update with saved data on page load
+    };
+
+</script>
+        .card .last-updated {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+        /* Canary section */
+        .canary-card {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffeeba;
+            padding: 10px;
+        }
+        /* Polling section */
+        .polling-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            table-layout: fixed;
+            word-wrap: break-word;
+        }
+        .polling-table th, .polling-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        .polling-table th {
+            background-color: #f4f4f4;
+        }
+        /* Data History Table */
+        .data-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+        .data-history-table th, .data-history-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        .data-history-table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        /* Button styling */
+        .btn {
+            padding: 6px 12px;
+            background-color: #003366;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .btn:hover {
+            background-color: #0055a5;
+        }
+        /* Form section */
+        .upload-section {
+            margin-top: 5px;
+            text-align: center;
+        }
+        .upload-section p {
+            margin: 5px 0;
+            font-size: 0.85em;
+        }
+        .upload-section label {
+            display: block;
+            margin: 5px 0 2px;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        .upload-section input[type="number"], .upload-section input[type="date"] {
+            width: 100%;
+            padding: 4px;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+        }
+        .upload-section h3 {
+            margin-top: 15px;
+            font-size: 1em;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        /* Committee members */
+        .committee-list {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+        .committee-list li {
+            margin-bottom: 8px;
+        }
+        /* Results display */
+        .results-display {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        /* Timestamp */
+        .timestamp {
+            font-size: 0.8em;
+            color: #777;
+            text-align: center;
+            margin: 5px 0;
+        }
+        /* Links list */
+        .links-list {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+        .links-list li {
+            margin-bottom: 8px;
+        }
+        .links-list a {
+            color: #003366;
+            text-decoration: none;
+        }
+        .links-list a:hover {
+            text-decoration: underline;
+        }
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .back-button {
+                position: relative;
+                margin: 0 auto 20px auto;
+                text-align: center;
+            }
+            .chart-area {
+                height: 300px;
+            }
+            .cards-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .card {
+                flex: 1 1 100%;
+                min-width: 100%;
+            }
+            .card.small-card, .card.medium-card {
+                flex: 1 1 100%;
+            }
+        }
+    
+    /* Popup styling */
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 1000;
+    }
+
+    .popup-content {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .popup-content label, .popup-content input, .popup-content button {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .popup-content img {
+        display: block;
+        margin-top: 10px;
+    }
+
+
+    .logo-placeholder {
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 200px;
+        height: 100px; /* Modified to better fit rectangle logos */
+    }
+
+
+    /* Popup styling with scroll and responsive height */
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 1000;
+        max-height: 80vh; /* Limits the height to 80% of viewport */
+        overflow-y: auto; /* Adds vertical scrollbar if content exceeds 80% */
+        width: 90%; /* Responsive width */
+        max-width: 500px;
+    }
+
+    .popup-content {
+        position: relative;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .popup-content .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.2em;
+        color: #333;
+        cursor: pointer;
+    }
+
+    </style>
+</head>
+<body>
+<div class="container">
+<!-- Back to Dashboard Button -->
+<div class="back-button">
+<a href="#">← Go back to dashboard</a>
+</div>
+<!-- Header with Logo Placeholder -->
+<div class="header">
+<div class="logo-placeholder" style="background-image: url('/mnt/data/Logo_TCX_NapaValleySD2_CMYK_Final.jpg'); background-size: contain; background-repeat: no-repeat; background-position: center; width: 200px; height: 100px;">
+<!-- Logo can be placed here -->
+</div>
+<h1>Yes on B - Safe and Modern Napa Schools</h1>
+<h2>Napa County</h2>
+</div>
+<!-- Chart Section -->
+<div class="card chart-card">
+<h2>Interactive Chart</h2>
+<div class="chart-area">
+<!-- Canvas for Chart.js -->
+<canvas id="campaignChart"></canvas>
+</div>
+<div class="chart-options">
+<label for="chart-type">Chart Type:</label>
+<select id="chart-type" onchange="updateChart()">
+<option value="bar">Bar</option>
+<option value="line">Line</option>
+<option value="pie">Pie</option>
+</select>
+<label for="chart-data">Data:</label>
+<select id="chart-data" onchange="updateChart()">
+<option value="age">Age Breakdown</option>
+<option value="party">Party Breakdown</option>
+<option value="polling">Polling Data</option>
+<option value="electionTurnout">Election Turnout</option>
+</select>
+<label for="chart-campaigns">Campaigns:</label>
+<select id="chart-campaigns" multiple="" onchange="updateChart()" style="min-width: 150px;">
+<option selected="" value="campaignA">Campaign A</option>
+<option value="campaignB">Campaign B</option>
+<option value="campaignC">Campaign C</option>
+<option value="canaryCampaign">Canary Campaign</option>
+<option value="campaignXYZ">Campaign XYZ</option>
+<option value="campaignABC">Campaign ABC</option>
+<option value="currentResults">Current Results</option>
+</select>
+</div>
+<!-- Message for Pie Chart Selection -->
+<div id="pie-chart-message" style="text-align: center; color: red; display: none; margin-top: 10px;">
+                Pie charts display percentages for one campaign at a time. Showing data for the first selected campaign.
+            </div>
+</div>
+<!-- Cards Container -->
+<div class="cards-container">
+<!-- Results Card (Resized) -->
+<div class="card medium-card">
+<h2>Results</h2>
+<p class="last-updated" id="results-last-updated">Last updated: N/A</p>
+<p id="vote-for-count"><strong>Vote For:</strong> N/A</p>
+<p id="vote-against-count"><strong>Vote Against:</strong> N/A</p>
+<p id="total-turnout-count"><strong>Total Turnout:</strong> N/A</p>
+</div>
+<!-- Previous Campaigns Card -->
+<div id="previousCampaignsSection"></div>
+<div class="card medium-card" id="previousCampaignsCard">
+</div>
+<!-- Polling Data Card -->
+<div class="card">
+<h2>Polling Data</h2>
+<p class="timestamp" id="polling-last-updated">Last updated: N/A</p>
+<table class="polling-table">
+<tr>
+<th>Question</th>
+<th>Support (%)</th>
+<th>Undecided (%)</th>
+<th>Oppose (%)</th>
+</tr>
+<tr>
+<td>Initial Question</td>
+<td>48</td>
+<td>22</td>
+<td>30</td>
+</tr>
+<tr>
+<td>After Opposition Message</td>
+<td>45</td>
+<td>25</td>
+<td>30</td>
+</tr>
+<tr>
+<td>After Education</td>
+<td>55</td>
+<td>20</td>
+<td>25</td>
+</tr>
+</table>
+</div>
+<!-- Party and Age Breakdown with Canary Card -->
+<div style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%;">
+<!-- Party Breakdown Card -->
+<div class="card small-card">
+<h2>Party Breakdown</h2>
+<p class="last-updated" id="party-last-updated">Last updated: N/A</p>
+<p id="democrats-count"><strong>Democrats:</strong> N/A</p>
+<p id="republicans-count"><strong>Republicans:</strong> N/A</p>
+<p id="independents-count"><strong>Independents:</strong> N/A</p>
+<p id="others-count"><strong>Others:</strong> N/A</p>
+</div>
+<!-- Age Breakdown Card -->
+<div class="card small-card">
+<h2>Age Breakdown</h2>
+<p class="last-updated" id="age-last-updated">Last updated: N/A</p>
+<p><strong>18-25:</strong> 1,200</p>
+<p><strong>26-40:</strong> 2,800</p>
+<p><strong>41-60:</strong> 3,000</p>
+<p><strong>60+:</strong> 1,500</p>
+</div>
+<!-- Canary in a Coal Mine Card -->
+<div class="card small-card canary-card" id="canaryCampaignsSection">
+<h2>Canary in a Coal Mine</h2>
+<!-- New campaign entries will be inserted here -->
+</div>
+<!-- Committee Members, Submit Data, Data History, and Resources Cards -->
+<div style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%;">
+<!-- Committee Members Card -->
+<div id="committeeMembersSection"></div>
+<div class="card small-card">
+<h2>Committee Members</h2>
+<ul class="committee-list">
+<li><strong>John Doe</strong><br/>Email: john.doe@example.com<br/>Phone: (123) 456-7890</li>
+<li><strong>Jane Smith</strong><br/>Email: jane.smith@example.com<br/>Phone: (234) 567-8901</li>
+<li><strong>Emily Johnson</strong><br/>Email: emily.johnson@example.com<br/>Phone: (345) 678-9012</li>
+<li><strong>Michael Brown</strong><br/>Email: michael.brown@example.com<br/>Phone: (456) 789-0123</li>
+<li><strong>Sarah Davis</strong><br/>Email: sarah.davis@example.com<br/>Phone: (567) 890-1234</li>
+</ul>
+</div>
+<!-- Submit Data Card -->
+<div class="card small-card">
+<h2 style="font-size: 1.1em; margin-bottom: 10px;">Submit Data</h2>
+<div class="upload-section">
+<form id="data-form">
+<h3>Party Breakdown</h3>
+<label for="democrats">Democrats:</label>
+<input id="democrats" min="0" name="democrats" type="number"/>
+<label for="republicans">Republicans:</label>
+<input id="republicans" min="0" name="republicans" type="number"/>
+<label for="independents">Independents:</label>
+<input id="independents" min="0" name="independents" type="number"/>
+<label for="others">Others:</label>
+<input id="others" min="0" name="others" type="number"/>
+<h3>Results</h3>
+<label for="voteFor">Vote For:</label>
+<input id="voteFor" min="0" name="voteFor" type="number"/>
+<label for="voteAgainst">Vote Against:</label>
+<input id="voteAgainst" min="0" name="voteAgainst" type="number"/>
+<label for="totalTurnout">Total Turnout:</label>
+<input id="totalTurnout" min="0" name="totalTurnout" type="number"/>
+<br/>
+<button class="btn" onclick="submitData()" type="button">Submit</button>
+</form>
+<p class="timestamp" id="last-submitted">Last submitted: Never</p>
+</div>
+</div>
+<!-- Resources Card -->
+<div class="card small-card">
+<h2>Resources</h2>
+<ul class="links-list">
+<li><a href="#">Art Drive</a></li>
+<li><a href="#">Internal Drive</a></li>
+<li><a href="#">Cross Tabs</a></li>
+<li><a href="#">County Elections Site</a></li>
+<li><a href="#">Campaign Site</a></li>
+<li><a href="#">Ed-Data Site</a></li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Data History Card -->
+<div class="card small-card">
+<h2>Data History</h2>
+<div class="data-history" id="data-history">
+<p>No data history available.</p>
+</div>
+<button class="btn" onclick="clearData()">Clear Data</button>
+</div>
+<!-- Footer -->
+<div class="footer">
+            © 2024 Carter James
+        </div>
+</div>
+<!-- JavaScript to handle chart and data submission -->
+<script>
+        // Data for charts
+        const campaignsData = {
+            campaignA: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [1200, 2800, 3000, 1500],
+                    label: 'Campaign A Age',
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+                    borderColor: '#4e73df'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [3000, 2500, 1500, 500],
+                    label: 'Campaign A Party',
+                    backgroundColor: ['#003f5c', '#bc5090', '#ffa600', '#58508d'],
+                    borderColor: '#003f5c'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [48, 45, 55],
+                    label: 'Campaign A Polling',
+                    backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe'],
+                    borderColor: '#ff6384'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [6000, 3000],
+                    label: 'Campaign A Election Turnout',
+                    backgroundColor: ['#4e73df', '#e74a3b'],
+                    borderColor: '#4e73df'
+                }
+            },
+            campaignB: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [1000, 2500, 3200, 1800],
+                    label: 'Campaign B Age',
+                    backgroundColor: ['#ff7c43', '#ffa600', '#bc5090', '#003f5c'],
+                    borderColor: '#ff7c43'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [2800, 2600, 1600, 600],
+                    label: 'Campaign B Party',
+                    backgroundColor: ['#2f4b7c', '#665191', '#a05195', '#d45087'],
+                    borderColor: '#2f4b7c'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [50, 47, 60],
+                    label: 'Campaign B Polling',
+                    backgroundColor: ['#f95d6a', '#ff7c43', '#ffa600'],
+                    borderColor: '#f95d6a'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [5500, 3500],
+                    label: 'Campaign B Election Turnout',
+                    backgroundColor: ['#1cc88a', '#e74a3b'],
+                    borderColor: '#1cc88a'
+                }
+            },
+            campaignC: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [1100, 2700, 3100, 1600],
+                    label: 'Campaign C Age',
+                    backgroundColor: ['#00876c', '#89cf43', '#f8de7e', '#ed6a5a'],
+                    borderColor: '#00876c'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [2900, 2400, 1700, 700],
+                    label: 'Campaign C Party',
+                    backgroundColor: ['#003f5c', '#2f4b7c', '#665191', '#a05195'],
+                    borderColor: '#003f5c'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [52, 49, 58],
+                    label: 'Campaign C Polling',
+                    backgroundColor: ['#ff6e54', '#dd5182', '#955196'],
+                    borderColor: '#ff6e54'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [6200, 2800],
+                    label: 'Campaign C Election Turnout',
+                    backgroundColor: ['#36b9cc', '#e74a3b'],
+                    borderColor: '#36b9cc'
+                }
+            },
+            canaryCampaign: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [800, 2000, 2500, 1200],
+                    label: 'Canary Campaign Age',
+                    backgroundColor: ['#9b59b6', '#3498db', '#2ecc71', '#e74c3c'],
+                    borderColor: '#9b59b6'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [2500, 2000, 1000, 500],
+                    label: 'Canary Campaign Party',
+                    backgroundColor: ['#2980b9', '#c0392b', '#16a085', '#8e44ad'],
+                    borderColor: '#2980b9'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [46, 44, 54],
+                    label: 'Canary Campaign Polling',
+                    backgroundColor: ['#2ecc71', '#e67e22', '#e74c3c'],
+                    borderColor: '#2ecc71'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [5000, 4000],
+                    label: 'Canary Campaign Election Turnout',
+                    backgroundColor: ['#27ae60', '#c0392b'],
+                    borderColor: '#27ae60'
+                }
+            },
+            campaignXYZ: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [900, 2200, 2800, 1300],
+                    label: 'Campaign XYZ Age',
+                    backgroundColor: ['#e74c3c', '#8e44ad', '#3498db', '#2ecc71'],
+                    borderColor: '#e74c3c'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [2600, 2100, 1100, 600],
+                    label: 'Campaign XYZ Party',
+                    backgroundColor: ['#9b59b6', '#1abc9c', '#f1c40f', '#34495e'],
+                    borderColor: '#9b59b6'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [49, 46, 56],
+                    label: 'Campaign XYZ Polling',
+                    backgroundColor: ['#16a085', '#2980b9', '#8e44ad'],
+                    borderColor: '#16a085'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [6000, 3000],
+                    label: 'Campaign XYZ Election Turnout',
+                    backgroundColor: ['#2980b9', '#c0392b'],
+                    borderColor: '#2980b9'
+                }
+            },
+            campaignABC: {
+                age: {
+                    labels: ['18-25', '26-40', '41-60', '60+'],
+                    data: [850, 2100, 2700, 1250],
+                    label: 'Campaign ABC Age',
+                    backgroundColor: ['#e67e22', '#e74c3c', '#2ecc71', '#9b59b6'],
+                    borderColor: '#e67e22'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [2550, 2050, 1050, 550],
+                    label: 'Campaign ABC Party',
+                    backgroundColor: ['#f39c12', '#d35400', '#c0392b', '#27ae60'],
+                    borderColor: '#f39c12'
+                },
+                polling: {
+                    labels: ['Initial', 'After Oppo', 'After Education'],
+                    data: [47, 45, 55],
+                    label: 'Campaign ABC Polling',
+                    backgroundColor: ['#1abc9c', '#2ecc71', '#3498db'],
+                    borderColor: '#1abc9c'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [5500, 3500],
+                    label: 'Campaign ABC Election Turnout',
+                    backgroundColor: ['#27ae60', '#c0392b'],
+                    borderColor: '#27ae60'
+                }
+            },
+            currentResults: {
+                age: {
+                    labels: [],
+                    data: [],
+                    label: 'Current Results Age',
+                    backgroundColor: [],
+                    borderColor: '#4e73df'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [0, 0, 0, 0],
+                    label: 'Current Results Party',
+                    backgroundColor: ['#003f5c', '#bc5090', '#ffa600', '#58508d'],
+                    borderColor: '#003f5c'
+                },
+                polling: {
+                    labels: [],
+                    data: [],
+                    label: 'Current Results Polling',
+                    backgroundColor: [],
+                    borderColor: '#4e73df'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [0, 0],
+                    label: 'Current Results Election Turnout',
+                    backgroundColor: ['#4e73df', '#e74a3b'],
+                    borderColor: '#4e73df'
+                }
+            }
+        };
+
+        let chartType = 'bar';
+        let currentData = 'age';
+        let chart;
+
+        // Data history array
+        let dataHistory = [];
+
+        
+    // Open the settings pop-up
+    function openSettingsPopup() {
+        document.getElementById('settingsPopup').style.display = 'block';
+        loadSettings();
+    }
+
+    // Close the settings pop-up
+    function closeSettingsPopup() {
+        document.getElementById('settingsPopup').style.display = 'none';
+    }
+
+    // Preview the logo when uploading
+    function previewLogo(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const preview = document.getElementById('logoPreview');
+            preview.src = reader.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Load settings from localStorage
+    function loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+        document.getElementById('campaignName').value = settings.campaignName || '';
+        document.getElementById('campaignCounty').value = settings.campaignCounty || '';
+        if (settings.logo) {
+            document.getElementById('logoPreview').src = settings.logo;
+            document.getElementById('logoPreview').style.display = 'block';
+        }
+    }
+
+    // Save settings to localStorage and update content
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src
+        };
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Update page content based on saved settings
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+    }
+
+    // Chart.js functions
+    // Initialize Chart.js chart
+    function initChart() {
+        const ctx = document.getElementById('campaignChart').getContext('2d');
+        const datasets = buildDatasets();
+
+        chart = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: getLabels(),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: (chartType !== 'pie') ? {
+                    y: {
+                        beginAtZero: true
+                    }
+                } : {},
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (chartType === 'pie') {
+                                    let total = context.chart._metasets[0].total;
+                                    let currentValue = context.parsed;
+                                    let percentage = ((currentValue / total) * 100).toFixed(1);
+                                    return `${context.label}: ${percentage}%`;
+                                } else {
+                                    return `${label}: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: function(value, context) {
+                            if (chartType === 'pie') {
+                                let total = context.chart._metasets[0].total;
+                                let percentage = ((value / total) * 100).toFixed(1);
+                                return `${percentage}%`;
+                            } else {
+                                return value;
+                            }
+                        },
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    // Update chart when chart type, data, or campaigns are changed
+    function updateChart() {
+        chartType = document.getElementById('chart-type').value;
+        currentData = document.getElementById('chart-data').value;
+        chart.destroy();
+        initChart();
+    }
+
+    // Initialize the chart and content on page load
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures both chart and settings load correctly
+    };
+
+        function initChart() {
+            const ctx = document.getElementById('campaignChart').getContext('2d');
+            const datasets = buildDatasets();
+
+            chart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: getLabels(),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: (chartType !== 'pie') ? {
+                        y: {
+                            beginAtZero: true
+                        }
+                    } : {},
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (chartType === 'pie') {
+                                        let total = context.chart._metasets[0].total;
+                                        let currentValue = context.parsed;
+                                        let percentage = ((currentValue / total) * 100).toFixed(1);
+                                        return `${context.label}: ${percentage}%`;
+                                    } else {
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value, context) {
+                                if (chartType === 'pie') {
+                                    let total = context.chart._metasets[0].total;
+                                    let percentage = ((value / total) * 100).toFixed(1);
+                                    return `${percentage}%`;
+                                } else {
+                                    return value;
+                                }
+                            },
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Build datasets based on selected campaigns and data
+        function buildDatasets() {
+            const campaignSelect = document.getElementById('chart-campaigns');
+            let selectedCampaigns = Array.from(campaignSelect.selectedOptions).map(option => option.value);
+            const datasets = [];
+
+            if (chartType === 'pie') {
+                // For pie charts, only use the first selected campaign
+                if (selectedCampaigns.length > 1) {
+                    document.getElementById('pie-chart-message').style.display = 'block';
+                    selectedCampaigns = [selectedCampaigns[0]];
+                } else {
+                    document.getElementById('pie-chart-message').style.display = 'none';
+                }
+            } else {
+                document.getElementById('pie-chart-message').style.display = 'none';
+            }
+
+            selectedCampaigns.forEach(campaign => {
+                const dataObj = campaignsData[campaign][currentData];
+
+                // Adjust dataset properties based on chart type
+                let dataset = {
+                    label: dataObj.label,
+                    data: dataObj.data,
+                    backgroundColor: dataObj.backgroundColor,
+                    borderColor: dataObj.borderColor,
+                    borderWidth: 1,
+                    datalabels: {
+                        color: chartType === 'line' ? dataObj.borderColor : '#000'
+                    }
+                };
+
+                if (chartType === 'line') {
+                    dataset.fill = false;
+                    dataset.borderWidth = 2;
+                    dataset.backgroundColor = dataObj.borderColor;
+                    dataset.tension = 0.1;
+                }
+
+                datasets.push(dataset);
+            });
+
+            return datasets;
+        }
+
+        // Get labels for the current data type
+        function getLabels() {
+            // Assuming all campaigns have the same labels for the same data type
+            const campaignKeys = Object.keys(campaignsData);
+            if (campaignKeys.length > 0) {
+                return campaignsData[campaignKeys[0]][currentData].labels;
+            }
+            return [];
+        }
+
+        // Update chart when chart type, data, or campaigns are changed
+        function updateChart() {
+            chartType = document.getElementById('chart-type').value;
+            currentData = document.getElementById('chart-data').value;
+            chart.destroy();
+            initChart();
+        }
+
+        // Initialize the chart on page load
+        window.onload = function() {
+            initChart();
+        };
+
+        // Handle data submission
+        function submitData() {
+            // Get values from the form
+           // Retrieve input values only if they are provided; retain previous values if left blank
+var democrats = document.getElementById('democrats').value 
+                ? parseInt(document.getElementById('democrats').value) 
+                : campaignsData['currentResults']['party'].data[0];
+var republicans = document.getElementById('republicans').value 
+                  ? parseInt(document.getElementById('republicans').value) 
+                  : campaignsData['currentResults']['party'].data[1];
+var independents = document.getElementById('independents').value 
+                   ? parseInt(document.getElementById('independents').value) 
+                   : campaignsData['currentResults']['party'].data[2];
+var others = document.getElementById('others').value 
+             ? parseInt(document.getElementById('others').value) 
+             : campaignsData['currentResults']['party'].data[3];
+
+var voteFor = document.getElementById('voteFor').value 
+              ? parseInt(document.getElementById('voteFor').value) 
+              : campaignsData['currentResults']['electionTurnout'].data[0];
+var voteAgainst = document.getElementById('voteAgainst').value 
+                  ? parseInt(document.getElementById('voteAgainst').value) 
+                  : campaignsData['currentResults']['electionTurnout'].data[1];
+
+// Update timestamp
+var now = new Date();
+var timestamp = now.toLocaleString();
+
+// Update Party Breakdown card
+document.getElementById('party-last-updated').innerText = 'Last updated: ' + timestamp;
+document.getElementById('democrats-count').innerHTML = '<strong>Democrats:</strong> ' + democrats.toLocaleString();
+document.getElementById('republicans-count').innerHTML = '<strong>Republicans:</strong> ' + republicans.toLocaleString();
+document.getElementById('independents-count').innerHTML = '<strong>Independents:</strong> ' + independents.toLocaleString();
+document.getElementById('others-count').innerHTML = '<strong>Others:</strong> ' + others.toLocaleString();
+
+// Update Results card
+document.getElementById('results-last-updated').innerText = 'Last updated: ' + timestamp;
+document.getElementById('vote-for-count').innerHTML = '<strong>Vote For:</strong> ' + voteFor.toLocaleString();
+document.getElementById('vote-against-count').innerHTML = '<strong>Vote Against:</strong> ' + voteAgainst.toLocaleString();
+
+// Update the chart data for 'party' and 'electionTurnout' for currentResults
+campaignsData['currentResults']['party'].data = [democrats, republicans, independents, others];
+campaignsData['currentResults']['electionTurnout'].data = [voteFor, voteAgainst];
+
+// Update the charts if the current data is 'party' or 'electionTurnout'
+if (currentData === 'party' || currentData === 'electionTurnout') {
+    updateChart();
+}
+
+// Update the last submitted timestamp
+document.getElementById('last-submitted').innerText = 'Last submitted: ' + timestamp;
+
+// Add the entry to dataHistory
+dataHistory.push({
+    timestamp: timestamp,
+    democrats: democrats,
+    republicans: republicans,
+    independents: independents,
+    others: others,
+    voteFor: voteFor,
+    voteAgainst: voteAgainst
+});
+
+// Update the data history display
+updateDataHistory();
+
+// Clear only text inputs (optional - can retain inputs if desired)
+document.getElementById('data-form').reset();
+
+            // Clear the form fields
+            document.getElementById('data-form').reset();
+
+        }
+
+
+        // Update Data History Display
+        function updateDataHistory() {
+            const dataHistoryDiv = document.getElementById('data-history');
+            if (dataHistory.length === 0) {
+                dataHistoryDiv.innerHTML = '<p>No data history available.</p>';
+            } else {
+                let tableHtml = '<table class="data-history-table"><tr><th>Timestamp</th><th>Democrats</th><th>Republicans</th><th>Independents</th><th>Others</th><th>Vote For</th><th>Vote Against</th><th>Total Turnout</th></tr>';
+                dataHistory.forEach(entry => {
+                    tableHtml += `<tr>
+                        <td>${entry.timestamp}</td>
+                        <td>${entry.democrats}</td>
+                        <td>${entry.republicans}</td>
+                        <td>${entry.independents}</td>
+                        <td>${entry.others}</td>
+                        <td>${entry.voteFor}</td>
+                        <td>${entry.voteAgainst}</td>
+                        <td>${entry.totalTurnout}</td>
+                    </tr>`;
+                });
+                tableHtml += '</table>';
+                dataHistoryDiv.innerHTML = tableHtml;
+            }
+        }
+
+        // Clear Data Function
+        function clearData() {
+            // Reset currentResults data
+            campaignsData['currentResults'] = {
+                age: {
+                    labels: [],
+                    data: [],
+                    label: 'Current Results Age',
+                    backgroundColor: [],
+                    borderColor: '#4e73df'
+                },
+                party: {
+                    labels: ['Democrats', 'Republicans', 'Independents', 'Others'],
+                    data: [0, 0, 0, 0],
+                    label: 'Current Results Party',
+                    backgroundColor: ['#003f5c', '#bc5090', '#ffa600', '#58508d'],
+                    borderColor: '#003f5c'
+                },
+                polling: {
+                    labels: [],
+                    data: [],
+                    label: 'Current Results Polling',
+                    backgroundColor: [],
+                    borderColor: '#4e73df'
+                },
+                electionTurnout: {
+                    labels: ['Vote For', 'Vote Against'],
+                    data: [0, 0],
+                    label: 'Current Results Election Turnout',
+                    backgroundColor: ['#4e73df', '#e74a3b'],
+                    borderColor: '#4e73df'
+                }
+            };
+
+            // Clear the Results card
+            document.getElementById('results-last-updated').innerText = 'Last updated: N/A';
+            document.getElementById('vote-for-count').innerHTML = '<strong>Vote For:</strong> N/A';
+            document.getElementById('vote-against-count').innerHTML = '<strong>Vote Against:</strong> N/A';
+            document.getElementById('total-turnout-count').innerHTML = '<strong>Total Turnout:</strong> N/A';
+
+            // Clear the Party Breakdown card
+            document.getElementById('party-last-updated').innerText = 'Last updated: N/A';
+            document.getElementById('democrats-count').innerHTML = '<strong>Democrats:</strong> N/A';
+            document.getElementById('republicans-count').innerHTML = '<strong>Republicans:</strong> N/A';
+            document.getElementById('independents-count').innerHTML = '<strong>Independents:</strong> N/A';
+            document.getElementById('others-count').innerHTML = '<strong>Others:</strong> N/A';
+
+            // Clear the data history
+            dataHistory = [];
+            updateDataHistory();
+
+            // Update the last submitted timestamp
+            document.getElementById('last-submitted').innerText = 'Last submitted: Never';
+
+            // Update the charts if necessary
+            if (currentData === 'party' || currentData === 'electionTurnout') {
+                updateChart();
+            }
+        }
+    
+    // Add dynamic form entries for Previous Campaigns
+    function addPreviousCampaign() {
+        const container = document.getElementById('previousCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Campaign Name" class="form-control">
+            <input type="number" placeholder="Year" class="form-control" min="1900" max="2100">
+            <input type="number" placeholder="Total Votes" class="form-control" min="0">
+            <input type="number" placeholder="Votes For" class="form-control" min="0">
+            <input type="number" placeholder="Votes Against" class="form-control" min="0">
+            <input type="number" placeholder="Turnout (%)" class="form-control" min="0" max="100">
+            <select class="form-control">
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+            </select>
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Polling
+    function addPoll() {
+        const container = document.getElementById('pollingData');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="date" class="form-control" placeholder="Date">
+            <input type="number" placeholder="Initial Ballot %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Oppo %" class="form-control" min="0" max="100">
+            <input type="number" placeholder="After Education %" class="form-control" min="0" max="100">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Canary Campaigns
+    function addCanaryCampaign() {
+        const container = document.getElementById('canaryCampaigns');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Canary Campaign Name" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+    // Add dynamic form entries for Committee Members
+    function addCommitteeMember() {
+        const container = document.getElementById('committeeMembers');
+        const entry = document.createElement('div');
+        entry.className = 'form-entry';
+        entry.innerHTML = `
+            <input type="text" placeholder="Name" class="form-control">
+            <input type="email" placeholder="Email" class="form-control">
+            <input type="tel" placeholder="Phone" class="form-control">
+            <input type="text" placeholder="Title" class="form-control">
+        `;
+        container.appendChild(entry);
+    }
+
+
+    // Close the popup when 'X' button is clicked
+    function closeSettingsPopupWithoutSaving() {
+        document.getElementById('settingsPopup').style.display = 'none';
+    }
+
+
+    // Function to dynamically update website content based on form entries
+   function updateContent() {
+    const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+    // Update basic info (Campaign Name, County, and Logo)
+    document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+    document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+    if (settings.logo) {
+        document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+    }
+
+    // Update Previous Campaigns
+    const previousCampaignsContainer = document.getElementById('previousCampaignsSection');
+    previousCampaignsContainer.innerHTML = ''; // Clear existing content
+    (settings.previousCampaigns || []).forEach(campaign => {
+        const campaignDiv = document.createElement('div');
+        campaignDiv.className = 'campaign-entry';
+        campaignDiv.innerHTML = `
+            <h4>${campaign.name} (${campaign.year})</h4>
+            <p>Total Votes: ${campaign.totalVotes}</p>
+            <p>Result: ${campaign.result}</p>
+            <p>Turnout: ${campaign.turnout}%</p>
+        `;
+        previousCampaignsContainer.appendChild(campaignDiv);
+    });
+
+    // Update Polling Data
+    const pollingContainer = document.getElementById('pollingDataSection');
+    pollingContainer.innerHTML = ''; // Clear existing content
+    (settings.pollingData || []).forEach(poll => {
+        const pollDiv = document.createElement('div');
+        pollDiv.className = 'poll-entry';
+        pollDiv.innerHTML = `
+            <p><strong>Date:</strong> ${poll.date}</p>
+            <p><strong>Initial Ballot:</strong> ${poll.initialPercent}%</p>
+            <p><strong>After Oppo:</strong> ${poll.oppoPercent}%</p>
+            <p><strong>After Education:</strong> ${poll.educationPercent}%</p>
+        `;
+        pollingContainer.appendChild(pollDiv);
+    });
+
+    // Update Canary Campaigns
+     // Canary Campaigns: Add entries within the card
+    const canaryCampaignsContainer = document.getElementById('canaryCampaignsSection');
+canaryCampaignsContainer.innerHTML = ''; // Clear previous entries
+
+(settings.canaryCampaigns || []).forEach(canary => {
+    const canaryDiv = document.createElement('div');
+    canaryDiv.className = 'card canary-entry';
+    canaryDiv.style.padding = '10px';
+    canaryDiv.innerHTML = `
+        <h3>${canary.name || 'Unnamed Campaign'}</h3>
+        <p><strong>Total Votes:</strong> ${canary.totalVotes || 'N/A'}</p>
+        <p><strong>Turnout:</strong> ${canary.turnout || 'N/A'}%</p>
+    `;
+    canaryCampaignsContainer.appendChild(canaryDiv);
+});
+    // Loop through each canary campaign in settings and create a new entry
+    (settings.canaryCampaigns || []).forEach(canary => {
+        const canaryDiv = document.createElement('div');
+        canaryDiv.className = 'card';
+        canaryDiv.style.backgroundColor = '#fff';
+        canaryDiv.style.padding = '10px';
+        canaryDiv.innerHTML = `
+            <h3>${canary.name || 'Unnamed Campaign'}</h3>
+            <p><strong>Last Updated:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>Total Votes:</strong> ${canary.totalVotes || 'N/A'}</p>
+            <p><strong>Votes Breakdown:</strong></p>
+            <ul>
+                <li>Yes: ${canary.votesFor || 'N/A'}</li>
+                <li>No: ${canary.votesAgainst || 'N/A'}</li>
+                <li>Undecided: ${canary.undecided || 'N/A'}</li>
+            </ul>
+            <p><strong>Turnout:</strong> ${canary.turnout || 'N/A'}%</p>
+        `;
+        canaryCampaignsContainer.appendChild(canaryDiv);
+    });
+
+    // Update Committee Members
+    const committeeMembersContainer = document.getElementById('committeeMembersSection');
+    committeeMembersContainer.innerHTML = ''; // Clear existing content
+    (settings.committeeMembers || []).forEach(member => {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'member-entry';
+        memberDiv.innerHTML = `
+            <strong>${member.name}</strong><br>
+            Email: ${member.email}<br>
+            Phone: ${member.phone}<br>
+            Title: ${member.title}
+        `;
+        committeeMembersContainer.appendChild(memberDiv);
+    });
+}
+
+    // Modify saveSettings to store data from dynamic form entries
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Load content on page load
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures content updates with saved data on page load
+    };
+
+
+    // Function to dynamically update website content within specific cards based on form entries
+    function updateContent() {
+        const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+        // Update basic info (Campaign Name, County, and Logo)
+        document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+        document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+        if (settings.logo) {
+            document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+        }
+
+        // Update Previous Campaigns in specific card
+        const previousCampaignsContainer = document.getElementById('previousCampaignsCard');
+        previousCampaignsContainer.innerHTML = ''; // Clear existing placeholder data
+
+// Add the "Previous Campaigns" header only once
+if (!document.getElementById('previousCampaignsHeader')) {
+    const header = document.createElement('h3');
+    header.id = 'previousCampaignsHeader';
+    header.innerText = 'Previous Campaigns';
+    previousCampaignsContainer.appendChild(header);
+}
+        (settings.previousCampaigns || []).forEach(campaign => {
+            const campaignDiv = document.createElement('div');
+            campaignDiv.className = 'campaign-entry';
+            campaignDiv.style.padding = '10px 0'; // Add padding for separation
+            campaignDiv.innerHTML = `
+                <h4>${campaign.name} (${campaign.year})</h4>
+                <p><strong>Total Votes:</strong> ${campaign.totalVotes}</p>
+                <p><strong>Result:</strong> ${campaign.result}</p>
+                <p><strong>Turnout:</strong> ${campaign.turnout}%</p>
+            `;
+            previousCampaignsContainer.appendChild(campaignDiv);
+        });
+
+      function updateContent() {
+    const settings = JSON.parse(localStorage.getItem('campaignSettings')) || {};
+
+    // Basic campaign info updates (name, county, logo)
+    document.querySelector('.header h1').innerText = settings.campaignName || 'Campaign Name';
+    document.querySelector('.header h2').innerText = settings.campaignCounty || 'County';
+    if (settings.logo) {
+        document.querySelector('.logo-placeholder').style.backgroundImage = `url(${settings.logo})`;
+    }
+
+    // Update Canary Campaigns
+     const canaryCampaignsContainer = document.getElementById('canaryCampaignsSection');
+    canaryCampaignsContainer.innerHTML = ''; // Clear previous entries
+
+    (settings.canaryCampaigns || []).forEach(canary => {
+        const canaryDiv = document.createElement('div');
+        canaryDiv.className = 'card canary-entry';
+        canaryDiv.style.padding = '5px 0';
+        canaryDiv.innerHTML = `
+            <h3>${canary.name || 'Unnamed Campaign'}</h3>
+            <p><strong>Total Votes:</strong> ${canary.totalVotes || 'N/A'}</p>
+            <p><strong>Turnout:</strong> ${canary.turnout || 'N/A'}%</p>
+        `;
+        canaryCampaignsContainer.appendChild(canaryDiv);
+    });
+}
+        // Update Committee Members in specific card
+        const committeeMembersContainer = document.getElementById('committeeMembersSection');
+        committeeMembersContainer.innerHTML = ''; // Clear existing placeholder data
+        (settings.committeeMembers || []).forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-entry';
+            memberDiv.style.padding = '5px 0'; // Add padding for separation
+            memberDiv.innerHTML = `
+                <strong>${member.name}</strong><br>
+                <p>Email: ${member.email}</p>
+                <p>Phone: ${member.phone}</p>
+                <p>Title: ${member.title}</p>
+            `;
+            committeeMembersContainer.appendChild(memberDiv);
+        });
+    }
+
+    // Save settings function adjusted for dynamic entries to replace placeholders within each card
+    function saveSettings() {
+        const settings = {
+            campaignName: document.getElementById('campaignName').value,
+            campaignCounty: document.getElementById('campaignCounty').value,
+            logo: document.getElementById('logoPreview').src,
+            previousCampaigns: [],
+            pollingData: [],
+            canaryCampaigns: [],
+            committeeMembers: []
+        };
+  // Capture dynamic Canary Campaigns data
+    settings.canaryCampaigns = [];
+    document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+        settings.canaryCampaigns.push({
+            name: entry.children[0].value,
+            totalVotes: entry.children[1] ? entry.children[1].value : 'N/A',
+            turnout: entry.children[2] ? entry.children[2].value : 'N/A',
+        });
+    });
+
+    localStorage.setItem('campaignSettings', JSON.stringify(settings));
+    updateContent();
+    closeSettingsPopup();
+        // Capture dynamic Previous Campaigns data
+        document.querySelectorAll('#previousCampaigns .form-entry').forEach(entry => {
+            settings.previousCampaigns.push({
+                name: entry.children[0].value,
+                year: entry.children[1].value,
+                totalVotes: entry.children[2].value,
+                voteFor: entry.children[3].value,
+                voteAgainst: entry.children[4].value,
+                turnout: entry.children[5].value,
+                result: entry.children[6].value
+            });
+        });
+
+        // Capture dynamic Polling data
+        document.querySelectorAll('#pollingData .form-entry').forEach(entry => {
+            settings.pollingData.push({
+                date: entry.children[0].value,
+                initialPercent: entry.children[1].value,
+                oppoPercent: entry.children[2].value,
+                educationPercent: entry.children[3].value
+            });
+        });
+
+        // Capture dynamic Canary Campaigns data
+        document.querySelectorAll('#canaryCampaigns .form-entry').forEach(entry => {
+            settings.canaryCampaigns.push({
+                name: entry.children[0].value
+            });
+        });
+
+        // Capture dynamic Committee Members data
+        document.querySelectorAll('#committeeMembers .form-entry').forEach(entry => {
+            settings.committeeMembers.push({
+                name: entry.children[0].value,
+                email: entry.children[1].value,
+                phone: entry.children[2].value,
+                title: entry.children[3].value
+            });
+        });
+
+        localStorage.setItem('campaignSettings', JSON.stringify(settings));
+        updateContent();
+        closeSettingsPopup();
+    }
+
+    // Initialize the chart and content on page load to include both data and layout adjustments
+    window.onload = function() {
+        initChart();
+        updateContent();  // Ensures card placeholders update with saved data on page load
+    };
+
+</script>
+<!-- Settings Button in the Top-Right -->
+<div style="position: fixed; top: 10px; right: 10px;">
+<button class="btn" onclick="openSettingsPopup()">Settings</button>
+</div>
+<!-- Pop-up Form for Campaign Setup -->
+<div class="popup" id="settingsPopup" style="display: none;">
+<div class="popup-content">
+<!-- Close Button at Top-Right -->
+<span class="close-button" onclick="closeSettingsPopupWithoutSaving()">✕</span>
+<h2>Campaign Setup</h2>
+<label for="campaignLogo">Campaign Logo:</label>
+<input accept="image/png, image/jpeg" id="campaignLogo" onchange="previewLogo(event)" type="file"/>
+<img alt="Logo Preview" id="logoPreview" src="" style="display: none; width: 100px; height: 100px; margin-top: 10px;"/>
+<label for="campaignName">Campaign Name:</label>
+<input id="campaignName" placeholder="Enter campaign name" type="text"/>
+<label for="campaignCounty">Campaign County:</label>
+<input id="campaignCounty" placeholder="Enter campaign county" type="text"/>
+<label>Previous Campaigns:</label>
+<div id="previousCampaigns"></div>
+<button onclick="addPreviousCampaign()">Add Previous Campaign</button>
+<label>Polling:</label>
+<div id="pollingData"></div>
+<button onclick="addPoll()">Add Poll</button>
+<label>Age Breakdown:</label>
+<!-- Add input fields for age groups as required -->
+<label>Canary in the Coal Mine:</label>
+<div id="canaryCampaigns"></div>
+<button onclick="addCanaryCampaign()">Add Canary Campaign</button>
+<label>Committee Members:</label>
+<div id="committeeMembers"></div>
+<button onclick="addCommitteeMember()">Add Committee Member</button>
+<button class="btn" onclick="saveSettings()">Save</button>
+<button class="btn" onclick="closeSettingsPopup()">Cancel</button>
+</div>
+</div>
+</div></body>
+</html>
